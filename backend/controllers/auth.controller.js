@@ -227,3 +227,57 @@ export const forgotPassword = async(req, res) => {
         })
     }
 }
+
+export const resetPassword = async(req, res) => {
+    try{
+        const {token} = req.params;
+        const {password,confirmPassword} = req.body;
+        
+        if(!password || !confirmPassword) {
+            return res.status(400).json({
+                success : false,
+                message : "Password and confirm-Password are required",
+            })
+        }
+
+        if(password !== confirmPassword) {
+            return res.status(400).json({
+                success : false,
+                message : "Passwords do not match",
+            });
+        }
+
+        //hash incoming token
+        const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+        const user = await User.findOne({
+            resetPasswordToken : hashedToken,
+            resetPasswordExpire : { $gt : Date.now()}
+        })
+        if(!user) {
+            return res.status(500).json({
+                success : false,
+                message : "Invalid or Expired token",
+            });
+        }
+
+        //hash new password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        user.password = hashedPassword;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+        await user.save();
+
+        return res.status(200).json({
+            success : true,
+            message : "Password reset Successful",
+        });
+
+    }catch(error) {
+        return res.status(500).json({
+            success : false,
+            message : "Interval Server Error",
+            error : error.message
+        })
+    }
+}
