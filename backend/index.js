@@ -1,26 +1,29 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+
+dotenv.config();
+
 import cookieParser from "cookie-parser";
 import {connectDB} from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js"
 import bookroutes from "./routes/book.routes.js"
 import borrowRoutes from "./routes/borrow.routes.js"
 import adminRoutes from "./routes/admin.routes.js"
-import connectCloudinary from "./config/cloudinary.js";
-
-
-dotenv.config();
+import {connectCloudinary} from "./config/cloudinary.js";
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({extended : true}));
 
-app.use(cookieParser());
 app.use(cors({
     origin : process.env.FRONTEND_URL,
     credentials : true
 }))
+
+app.use(cookieParser())
+
+app.use(express.json());
+
+app.use(express.urlencoded({extended : true}));
 
 app.get("/api", (req,res)=>{
     res.json({message : "Hello from server"});
@@ -33,9 +36,8 @@ connectDB()
 connectCloudinary()
 
 //Routes
-
 app.use("/api/auth", authRoutes)
-app.use("/api/book", bookroutes)
+app.use("/api/books", bookroutes)
 app.use("/api/borrow", borrowRoutes)
 app.use("/api/admin", adminRoutes)
 

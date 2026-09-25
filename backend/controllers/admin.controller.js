@@ -46,7 +46,7 @@ export const getSingleStudent = async(req, res) => {
 //DELETE STUDENT
 export const deleteStudent = async(req, res) => {
     try{
-        const student = await User.findById(req.params.Id);
+        const student = await User.findById(req.params.id);
 
         if(!student) {
             return res.status(404).json({
@@ -61,7 +61,7 @@ export const deleteStudent = async(req, res) => {
         });
 
         if(activeBorrows > 0) {
-            return res.status(500).json({
+            return res.status(409).json({
                 success : false,
                 message : "Cannot delete student because they still have borrowed books",
             });
@@ -81,4 +81,3 @@ export const deleteStudent = async(req, res) => {
         })
     }
 }
-

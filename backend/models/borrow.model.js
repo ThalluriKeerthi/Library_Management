@@ -26,7 +26,7 @@ export const borrowSchema = new mongoose.Schema({
     },
     status : {
         type : String,
-        enum : ["borrowed", " returned"],
+        enum : ["borrowed","returned"],
         default : "borrowed",
     },
 },

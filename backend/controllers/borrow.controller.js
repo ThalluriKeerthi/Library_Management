@@ -2,7 +2,6 @@ import Borrow from "../models/borrow.model.js"
 import Book from "../models/book.model.js"
 
 //BORROW BOOK
-
 export const borrowBook = async(req, res) => {
     try {
         if(req.user.role !== "student") {
@@ -96,7 +95,7 @@ export const borrowBook = async(req, res) => {
              {new : true}
         );
 
-        if(updatedBook) {
+        if(!updatedBook) {
             return res.status(400).json({ 
                 success : false,
                 message: "Book is out of Stock" 
@@ -122,7 +121,6 @@ export const borrowBook = async(req, res) => {
 }
 
 //RETURN BOOK
-
 export const returnBook = async(req, res) => {
     try {
         const {borrowId} = req.body;
@@ -190,7 +188,6 @@ export const returnBook = async(req, res) => {
 } 
 
 //GET MY BORROWED BOOKS
-
 export const getMyBorrowedBooks = async(req, res) => {
     try {
         const borrowedBooks = await Borrow.find({student : req.user.id}).populate("book").sort({createdAt : -1});
@@ -217,11 +214,10 @@ export const getMyBorrowedBooks = async(req, res) => {
 }
 
 //GET ALL BORROWED BOOKS (ADMIN)
-
 export const getAllBorrowedBooks = async(req, res) => {
     try{
-        const records = await Borrow.find().populate("student","name","email")
-        .populate("book","title","author").sort({createdAt : -1});
+        const records = await Borrow.find().populate("student","name email")
+        .populate("book","title author").sort({createdAt : -1});
 
         const updatedRecords = records.map((item) => {
             const isOverdue = item.status === "borrowed" && new Date(item.dueDate) < new Date();
@@ -235,7 +231,7 @@ export const getAllBorrowedBooks = async(req, res) => {
             success : true,
             message: "Borrowed books fetched successfully",
             count : updatedRecords.length,
-            borrowedBooks: updatedRecords
+            records: updatedRecords
         });
 
     }catch(error) {
@@ -259,7 +255,7 @@ export const getAllOverDueBooks = async(req, res) => {
             success : true,
             message: "Borrowed books fetched successfully",
             count : overdueBooks.length,
-            borrowedBooks: overdueBooks
+            overdueBooks : overdueBooks
         });
 
     }catch(error) {
@@ -291,7 +287,7 @@ export const getStudentDashboard = async(req, res) => {
             status : "borrowed",
         });
 
-        const returnedBooks = await Book.countDocuments({
+        const returnedBooks = await Borrow.countDocuments({
             student : studentId,
             status : "returned",
         });
@@ -308,7 +304,9 @@ export const getStudentDashboard = async(req, res) => {
 
         const updatedActivity = recentActivity.map((item) => {
             const isOverdue = item.status === "borrowed" && new Date(item.dueDate) < new Date();
-            const daysLate = isOverdue? (Math.ceil(new Date() - new Date(item.dueDate)) / 1000 * 60 * 60 * 24) : 0;
+            const daysLate = isOverdue 
+    ? Math.ceil((new Date() - new Date(item.dueDate)) / (1000 * 60 * 60 * 24)) 
+    : 0;
 
             return {
                 ...item._doc,

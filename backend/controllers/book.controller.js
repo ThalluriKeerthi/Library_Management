@@ -3,13 +3,12 @@ import {v2 as cloudinary} from "cloudinary"
 import Borrow from "../models/borrow.model.js";
 
 //CREATE BOOK
-
-export const createBook = async(requestAnimationFrame, res) => {
+export const createBook = async(req, res) => {
     try{
         const {title, description, category, language, totalCopies, availableCopies} = req.body;
 
         if(!title || !description || !category || !language || !totalCopies || !availableCopies) {
-            return res.staus(400).json({
+            return res.status(400).json({
                 success :false,
                 message : "Please provide all required fields"
             })
@@ -40,7 +39,9 @@ export const createBook = async(requestAnimationFrame, res) => {
             message : "Book added successfully"
         })
     }catch(error) {
+         console.log(error);
         return res.status(500).json({
+           
             success : false,
             message : "Failed to create Book",
             error : error.message
@@ -48,8 +49,7 @@ export const createBook = async(requestAnimationFrame, res) => {
     }
 }
 
-//GET ALL BOOKS  + SEARCH + FILTER
-
+//GET ALL BOOKS + SEARCH + FILTER
 export const getAllBooks = async(req, res) => {
     try{
         const {keyword, category, language, availableCopies} = req.query;
@@ -67,12 +67,14 @@ export const getAllBooks = async(req, res) => {
         }
         if(availableCopies === "true") {
             query.availableCopies = {$gte : 0};
-        } else {
+        } 
+        if (availableCopies === "false") {
             query.availableCopies = 0;
         }
-        const books = (await Book.find(query)).sort({createdAt:-1});
 
-        return res.status(500).json({
+        const books = await Book.find(query).sort({createdAt: -1});
+
+        return res.status(200).json({
             success : true,
             count : books.length,
             books
@@ -111,13 +113,12 @@ export const getSingleBook = async(req, res) => {
     }
 }
 
-
 //UPDATE BOOK
 export const updateBook = async(req, res) => {
     try {
         const {title, description, category, language, totalCopies, availableCopies} = req.body;
 
-        let book = await Book.findById(req.params.Id);
+        let book = await Book.findById(req.params.id);
 
         if(!book) {
             return res.status(400).json({
@@ -226,7 +227,7 @@ export const getAdminDashboardStats = async(req, res) => {
     try{
         
         const totalBooks = await Book.countDocuments();
-        const totalBorrows = await Borrow.countDocuments();
+        const totalBorrowedRecords = await Borrow.countDocuments();
         const borrowedBooksCount = await Borrow.countDocuments({status : "borrowed"});
         const returnedBooksCount = await Borrow.countDocuments({status : "returned"});
         const overDueBorrowsCount = await Borrow.countDocuments({status : "borrowed", dueDate : {$lt : new Date()}});
@@ -236,7 +237,7 @@ export const getAdminDashboardStats = async(req, res) => {
         const availableCopies = books.reduce((sum, book) => sum + book.availableCopies, 0);
 
         const recentBorrows = await Borrow.find().populate("student"," name email")
-        .populate("book", "title")
+        .populate("book", "title category")
         .sort({createdAt : -1}).limit(5)
         
         return res.status(200).json({
@@ -244,12 +245,13 @@ export const getAdminDashboardStats = async(req, res) => {
             message : "Dashboard stats fetched successfully",
             stats : {
                 totalBooks,
-                totalBorrows,
+                totalCopies,
                 borrowedBooksCount,
                 returnedBooksCount,
                 overDueBorrowsCount,
                 totalCopies,
                 availableCopies,
+                totalBorrowedRecords
             },
             recentBorrows,
         });

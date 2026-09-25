@@ -1,5 +1,6 @@
 import express from "express";
-import {logoutUser, registerStudent, loginUser, getMyProfile, forgotPassword, resetPassword} from "../controllers/auth.controller.js";
+import {logoutUser, registerStudent, loginUser, getMyProfile, forgotPassword, resetPassword} from 
+"../controllers/auth.controller.js";
 import { isAuthenticated } from "../middlewares/authMiddleware.js";
 const router = express.Router();
 

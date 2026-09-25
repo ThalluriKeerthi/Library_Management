@@ -10,7 +10,7 @@ export const bookSchema = new mongoose.Schema({
         type : String,
         required : [true, "Description is required"],
     },
-    categories : {
+    category : {
         type : String,
         required : [true,"Category is required"],
         enum : [

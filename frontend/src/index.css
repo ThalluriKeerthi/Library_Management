@@ -1,0 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Mallanna&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+@import "tailwindcss";
+
+*{
+    font-family: 'Roboto', sans-serif;
+    font-weight:600;
+    font-style: normal;
+}
+h1,h2,h3,h4{
+    font-weight:700;
+    font-size:30px;
+}
+p{
+    font-size:18px;
+    font-weight:400;
+}

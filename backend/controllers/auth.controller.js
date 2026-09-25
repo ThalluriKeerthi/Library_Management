@@ -13,18 +13,17 @@ const cookieOptions = {
 }
 
 //STUDENT REGISTER
-
 export const registerStudent = async (req, res) => {
     try {
         const {name, email, password} = req.body;
         if(!name || !email || !password) {
-            return res.json({success : false, message : "All fields are required"});
+            return res.status(409).json({success : false, message : "All fields are required"});
         }
 
         const existingUser = await User.findOne({email});
 
         if(existingUser) {
-            return res.json({success : false, message : "student already exists with this email"});
+            return res.status(409).json({success : false, message : "student already exists with this email"});
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -53,26 +52,24 @@ export const registerStudent = async (req, res) => {
                 role : user.role
             }
         }) 
-    } catch(err) {
-        return res.json({message : "Internal server error", error});
+    } catch(error) {
+        return res.status(500).json({message : "Internal server error", error});
     }
 }
-
 
 //LOGIN (ADMIN + STUDENT)
 export const loginUser = async(req, res) => {
     try{
-        const {email, password} = req.body;
+        const {email,password} = req.body;
         if(!email || !password) {
-            return res.json({success : false, message : "All fields are required"});
+            return res.status(400).json({success : false, message : "All fields are required"});
         }
 
         //Admin login from .env
-
         if(email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
             const token = generateToken({
                 email : process.env.ADMIN_EMAIL,
-                role : admin
+                role : "admin"
             });
             res.cookie("token", token, cookieOptions);
 
@@ -96,7 +93,7 @@ export const loginUser = async(req, res) => {
             })
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await bcrypt.compare(password,user.password);
         if(!isPasswordValid) {
             return res.status(401).json({
                 success : false,
@@ -121,13 +118,12 @@ export const loginUser = async(req, res) => {
             }
         }) 
 
-    }catch(err) {
-        return res.json({message : "Internal server error", error});
+    }catch(error) {
+        return res.status(500).json({message : "Internal server error", error});
     }
 }
 
 //LOGOUT 
-
 export const logoutUser = async(req, res) => {
     try{
         res.cookie("token", "",{
@@ -139,7 +135,7 @@ export const logoutUser = async(req, res) => {
             message : "Logged out successfully"
         });
     } catch(error) {
-         return res.json({message : "Internal server error", error});
+         return res.status(500).json({message : "Internal server error", error});
     }
 } 
 
@@ -147,11 +143,14 @@ export const logoutUser = async(req, res) => {
 export const getMyProfile = async(req, res) => {
     try{
         
-        if(req.user.role === "Admin") {
+        if(req.user.role === "admin") {
             return res.status(200).json({
             success : true,
-            message : "Logged out successfully"
-                })
+            user: {
+          email: process.env.ADMIN_EMAIL,
+          role: "admin",
+            }
+          });
         };    
 
         const {id} = req.user;
@@ -169,6 +168,7 @@ export const getMyProfile = async(req, res) => {
     }
 }
 
+//Forgot Password
 export const forgotPassword = async(req, res) => {
     try{
         const {email} = req.body;
@@ -198,15 +198,32 @@ export const forgotPassword = async(req, res) => {
         const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
         const message = `Password Reset Request 
-          click the link below to reset your password ${resetURL}
           This link will expire in 15 minutes
           If you did not request this , please ignore this email.`;
+
+        const html = `
+        <div style="font-family:Arial,sans-serif;line-height:1.6;">
+          <h2>Password Reset Request </h2>
+          <p>Click the button to reset your password</p>
+          <a
+             href = "${resetURL} style="display:inline-block;
+             padding:12px 20px;
+             background:black;
+             color:white;
+             text-decoration:none;
+             border-radius:6px;
+             font-weight:bold; "> Reset Password </a>
+
+             <p style="margin-top:20px;"> This link will expire in 15 minutes</p>
+             <p>If you did not request this , please ignore this email</p>
+        </div>`;
 
         try {
             await sendEmail({
                 email : user.email,
                 subject : "Password Reset",
-                message : message
+                message : message,
+                html
             })
             return res.status(200).json({
                 success : true,
@@ -228,6 +245,7 @@ export const forgotPassword = async(req, res) => {
     }
 }
 
+//Reset Password
 export const resetPassword = async(req, res) => {
     try{
         const {token} = req.params;
